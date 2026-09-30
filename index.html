@@ -1,0 +1,2405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Eólico Maker - Engenharia & Sustentabilidade</title>
+    <!-- Google Fonts: Roboto, Orbitron e Roboto Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #070d19;
+            --bg-card: #0e172a;
+            --bg-card-hover: #162440;
+            --blueprint-grid: rgba(0, 210, 255, 0.05);
+            --cyan-primary: #00f2fe;
+            --cyan-secondary: #00c6ff;
+            --cyan-glow: rgba(0, 242, 254, 0.4);
+            --border-blueprint: #1e3a5f;
+            --border-active: #00f2fe;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-highlight: #ffffff;
+            --accent-green: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.6);
+            --accent-red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.6);
+            --accent-yellow: #f59e0b;
+            --yellow-glow: rgba(245, 158, 11, 0.6);
+            --font-main: 'Roboto', sans-serif;
+            --font-tech: 'Orbitron', sans-serif;
+            --font-code: 'Roboto Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(var(--blueprint-grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--blueprint-grid) 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: var(--text-main);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            overflow-x: hidden;
+        }
+
+        body.camera-shake {
+            animation: screenRumble 0.5s ease-in-out;
+        }
+
+        @keyframes screenRumble {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-3px, 2px); }
+            20% { transform: translate(4px, -2px); }
+            30% { transform: translate(-4px, 3px); }
+            40% { transform: translate(3px, -1px); }
+            50% { transform: translate(-2px, 2px); }
+            60% { transform: translate(2px, -3px); }
+        }
+
+        /* Container Principal */
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Cabecalho Blueprint */
+        header {
+            background: rgba(14, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-blueprint);
+            border-top: 3px solid var(--cyan-primary);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            user-select: none;
+        }
+
+        header::before {
+            content: "PROJECT ID: EOLIC-MAKER-2026";
+            position: absolute;
+            top: 6px;
+            left: 12px;
+            font-family: var(--font-code);
+            font-size: 0.65rem;
+            color: var(--cyan-secondary);
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        .header-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 6px;
+        }
+
+        header h1 {
+            font-family: var(--font-tech);
+            color: var(--text-highlight);
+            font-size: clamp(1.4rem, 4vw, 2.2rem);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 4px;
+            text-shadow: 0 0 12px var(--cyan-glow);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        header h1:active {
+            transform: scale(0.98);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            margin-top: 6px;
+        }
+
+        .btn-tutorial-open {
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid var(--cyan-primary);
+            color: var(--cyan-primary);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-family: var(--font-tech);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-tutorial-open:hover {
+            background: var(--cyan-primary);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        /* Indicador de Etapas Principal */
+        .step-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .step-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: var(--font-tech);
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            background: rgba(30, 58, 95, 0.4);
+            border: 1px solid var(--border-blueprint);
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .step-pill.active {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--cyan-primary);
+            color: var(--cyan-primary);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .step-num {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--border-blueprint);
+            color: var(--bg-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.75rem;
+        }
+
+        .step-pill.active .step-num {
+            background: var(--cyan-primary);
+            color: var(--bg-dark);
+        }
+
+        /* Views (Telas) */
+        .view-section {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .view-section.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards Blueprint */
+        .blueprint-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-blueprint);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .blueprint-card::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 12px;
+            height: 12px;
+            border-right: 2px solid var(--cyan-primary);
+            border-bottom: 2px solid var(--cyan-primary);
+        }
+
+        .card-title {
+            font-family: var(--font-tech);
+            font-size: 1.05rem;
+            color: var(--cyan-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.15);
+        }
+
+        /* Layout Esteira de Montagem (Tela 1) */
+        .assembly-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 850px) {
+            .assembly-grid {
+                grid-template-columns: 1fr 1.1fr;
+            }
+        }
+
+        /* Stage de Visualizacao SVG da Turbina Sendo Montada */
+        .assembly-stage {
+            background: rgba(5, 10, 20, 0.95);
+            border: 1px solid var(--border-blueprint);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 380px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stage-title {
+            font-family: var(--font-tech);
+            font-size: 0.8rem;
+            color: var(--cyan-secondary);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            align-self: flex-start;
+        }
+
+        .stage-svg-wrapper {
+            width: 100%;
+            max-width: 280px;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .svg-piece {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        .svg-piece.installed {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Stepper de Pecas na Esteira */
+        .assembly-stepper {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            width: 100%;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .step-tab {
+            flex: 1;
+            min-width: 90px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-blueprint);
+            border-radius: 6px;
+            padding: 8px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .step-tab:hover {
+            border-color: rgba(0, 242, 254, 0.4);
+            background: var(--bg-card-hover);
+        }
+
+        .step-tab.active {
+            border-color: var(--cyan-primary);
+            background: rgba(0, 242, 254, 0.12);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        .step-tab.completed {
+            border-color: var(--accent-green);
+        }
+
+        .step-tab.completed .tab-num {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .tab-num {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--border-blueprint);
+            color: var(--text-main);
+            font-family: var(--font-tech);
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-label {
+            font-size: 0.7rem;
+            font-family: var(--font-tech);
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .step-tab.active .tab-label {
+            color: var(--cyan-primary);
+            font-weight: bold;
+        }
+
+        /* Paineis de Selecao por Passo */
+        .step-content-panel {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .step-content-panel.active {
+            display: flex;
+        }
+
+        .step-instruction {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .options-vertical-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .piece-option-btn {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-blueprint);
+            border-radius: 6px;
+            padding: 12px 16px;
+            color: var(--text-main);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .piece-option-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(0, 242, 254, 0.5);
+            transform: translateX(4px);
+        }
+
+        .piece-option-btn.selected {
+            background: rgba(0, 242, 254, 0.12);
+            border-color: var(--cyan-primary);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .piece-option-btn.selected::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--cyan-primary);
+        }
+
+        .opt-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-highlight);
+        }
+
+        .opt-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-family: var(--font-code);
+            margin-top: 2px;
+        }
+
+        .opt-badge {
+            font-family: var(--font-tech);
+            font-size: 0.72rem;
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--cyan-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            white-space: nowrap;
+        }
+
+        /* Botoes de Acao e Navegacao */
+        .stepper-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            font-family: var(--font-tech);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 198, 255, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 242, 254, 0.5);
+            background: linear-gradient(135deg, #00f2fe 0%, #0088ff 100%);
+        }
+
+        .btn-primary:disabled {
+            background: rgba(30, 58, 95, 0.4);
+            color: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
+            box-shadow: none;
+            border: 1px solid var(--border-blueprint);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--cyan-primary);
+            border: 1px solid var(--cyan-primary);
+            border-radius: 6px;
+            padding: 10px 18px;
+            font-family: var(--font-tech);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(0, 242, 254, 0.1);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: var(--border-blueprint);
+            color: var(--text-muted);
+        }
+
+        /* Layout Tela 2: Grid 2 Colunas */
+        .test-panel-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 850px) {
+            .test-panel-grid {
+                grid-template-columns: 1fr 1.1fr;
+            }
+        }
+
+        /* Display Visual da Turbina & Mapa da Escola */
+        .turbine-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(5, 10, 20, 0.85);
+            border: 1px solid var(--border-blueprint);
+            border-radius: 8px;
+            padding: 20px 16px;
+            position: relative;
+            min-height: 340px;
+            overflow: hidden;
+        }
+
+        .energy-pulse-ring {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 2px solid var(--cyan-primary);
+            box-shadow: 0 0 20px var(--cyan-primary);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .energy-pulse-ring.active {
+            animation: pulseWave 1.5s ease-out infinite;
+        }
+
+        @keyframes pulseWave {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(3.5); opacity: 0; }
+        }
+
+        .turbine-svg-container {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .turbine-blades {
+            transform-origin: 100px 75px;
+            transition: transform 0.5s ease;
+        }
+
+        .turbine-blades.spin-slow {
+            animation: spinBlades 3s linear infinite;
+        }
+
+        .turbine-blades.spin-fast {
+            animation: spinBlades 0.25s linear infinite;
+        }
+
+        .turbine-svg-container.shake {
+            animation: shakeTurbine 0.4s ease-in-out infinite;
+        }
+
+        @keyframes spinBlades {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes shakeTurbine {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px) rotate(-1deg); }
+            40% { transform: translateX(4px) rotate(1deg); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+        }
+
+        /* MAPA DA ESCOLA ESTADUAL JOSÉ MAMEDE DE AQUINO (PANEL DE VITÓRIA) */
+        .school-map-wrapper {
+            width: 100%;
+            height: 190px;
+            background: rgba(10, 18, 35, 0.95);
+            border: 1px solid var(--cyan-primary);
+            border-radius: 6px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: fadeIn 0.4s ease;
+            box-shadow: inset 0 0 20px rgba(0, 242, 254, 0.15);
+        }
+
+        .school-map-wrapper.active {
+            display: flex;
+        }
+
+        /* LED Indicador */
+        .led-status-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 10px 18px;
+            border-radius: 30px;
+            border: 1px solid var(--border-blueprint);
+            z-index: 2;
+        }
+
+        .led-light {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #334155;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
+
+        .led-light.red {
+            background: var(--accent-red);
+            box-shadow: 0 0 15px var(--accent-red), inset 0 -2px 4px rgba(0,0,0,0.4);
+            animation: pulseRed 1s infinite alternate;
+        }
+
+        .led-light.yellow {
+            background: var(--accent-yellow);
+            box-shadow: 0 0 15px var(--accent-yellow), inset 0 -2px 4px rgba(0,0,0,0.4);
+        }
+
+        .led-light.green {
+            background: var(--accent-green);
+            box-shadow: 0 0 20px var(--accent-green), 0 0 35px var(--accent-green), inset 0 -2px 4px rgba(0,0,0,0.4);
+            animation: glowGreen 0.8s infinite alternate;
+        }
+
+        @keyframes pulseRed {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+
+        @keyframes glowGreen {
+            from { box-shadow: 0 0 10px var(--accent-green); }
+            to { box-shadow: 0 0 25px var(--accent-green), 0 0 40px var(--accent-green); }
+        }
+
+        .led-label {
+            font-family: var(--font-tech);
+            font-size: 0.8rem;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
+
+        /* Especificacoes Ativas */
+        .active-specs-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 16px;
+            font-size: 0.8rem;
+        }
+
+        .active-spec-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(30, 58, 95, 0.6);
+            border-radius: 6px;
+            padding: 8px 12px;
+        }
+
+        .active-spec-card span {
+            display: block;
+        }
+
+        .active-spec-card .lbl {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-family: var(--font-tech);
+        }
+
+        .active-spec-card .val {
+            color: var(--cyan-primary);
+            font-family: var(--font-code);
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        /* Formulario de Calculos do Aluno */
+        .calc-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
+        .input-label-row {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Tooltip [?] de Explicacao de Grandezas */
+        .tooltip-trigger {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(0, 242, 254, 0.15);
+            border: 1px solid var(--cyan-primary);
+            color: var(--cyan-primary);
+            font-family: var(--font-code);
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tooltip-trigger:hover, .tooltip-trigger:focus {
+            background: var(--cyan-primary);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .tooltip-bubble {
+            position: absolute;
+            left: 0;
+            bottom: calc(100% + 8px);
+            width: 280px;
+            background: rgba(14, 23, 42, 0.98);
+            border: 1px solid var(--cyan-primary);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 242, 254, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            line-height: 1.4;
+            z-index: 100;
+            display: none;
+            animation: fadeIn 0.2s ease;
+            pointer-events: none;
+        }
+
+        .tooltip-bubble::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 20px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: var(--cyan-primary) transparent transparent transparent;
+        }
+
+        .tooltip-trigger:hover .tooltip-bubble,
+        .tooltip-trigger:focus .tooltip-bubble,
+        .tooltip-trigger.active .tooltip-bubble {
+            display: block;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-field {
+            width: 100%;
+            background: rgba(10, 16, 30, 0.9);
+            border: 1px solid var(--border-blueprint);
+            border-radius: 6px;
+            padding: 12px 14px;
+            color: var(--text-highlight);
+            font-family: var(--font-code);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--cyan-primary);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .input-field.error-border {
+            border-color: var(--accent-red) !important;
+            box-shadow: 0 0 12px var(--red-glow) !important;
+            background: rgba(239, 68, 68, 0.08) !important;
+        }
+
+        .input-unit {
+            position: absolute;
+            right: 14px;
+            font-family: var(--font-code);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .field-math-hint {
+            font-size: 0.78rem;
+            color: var(--accent-red);
+            font-family: var(--font-main);
+            display: none;
+            line-height: 1.35;
+            margin-top: 4px;
+            padding: 6px 10px;
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 3px solid var(--accent-red);
+            border-radius: 4px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .field-math-hint.active {
+            display: block;
+        }
+
+        /* Caixas de Mensagem & Feedback Granular */
+        .feedback-box {
+            padding: 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            display: none;
+            animation: fadeIn 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .feedback-box.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.12);
+            border-color: var(--accent-red);
+            color: #fca5a5;
+        }
+
+        .feedback-box.warning {
+            display: block;
+            background: rgba(245, 158, 11, 0.12);
+            border-color: var(--accent-yellow);
+            color: #fde047;
+        }
+
+        .feedback-box.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.12);
+            border-color: var(--accent-green);
+            color: #6ee7b7;
+        }
+
+        .feedback-box h4 {
+            font-family: var(--font-tech);
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Modais & Overlays (Tutorial, Assistente & Loot Cards) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(3, 7, 18, 0.92);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--cyan-primary);
+            box-shadow: 0 12px 40px rgba(0, 242, 254, 0.25), 0 0 20px rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            width: 100%;
+            max-width: 820px;
+            padding: 24px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            max-height: 92vh;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+            padding-bottom: 12px;
+        }
+
+        .modal-header h3 {
+            font-family: var(--font-tech);
+            color: var(--cyan-primary);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close-btn:hover {
+            color: var(--cyan-primary);
+        }
+
+        .tutorial-step-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            min-height: 90px;
+        }
+
+        .tutorial-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .tutorial-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(30, 58, 95, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .tutorial-dot.active {
+            background: var(--cyan-primary);
+            box-shadow: 0 0 8px var(--cyan-glow);
+            transform: scale(1.2);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        /* ESTILOS DO "LOOT" (CARTAS COLECINÁVEIS DE FÍSICA DE RPG) */
+        .loot-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .rpg-card {
+            background: linear-gradient(145deg, #0d1b32 0%, #081122 100%);
+            border: 1px solid var(--border-blueprint);
+            border-top: 3px solid var(--cyan-primary);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .rpg-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            border-color: var(--cyan-primary);
+            box-shadow: 0 12px 30px rgba(0, 242, 254, 0.25);
+        }
+
+        .rpg-card-badge {
+            font-family: var(--font-tech);
+            font-size: 0.65rem;
+            color: var(--cyan-primary);
+            background: rgba(0, 242, 254, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            align-self: flex-start;
+        }
+
+        .rpg-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rpg-card-icon {
+            font-size: 1.8rem;
+            line-height: 1;
+            filter: drop-shadow(0 0 8px var(--cyan-glow));
+        }
+
+        .rpg-card-title {
+            font-family: var(--font-tech);
+            font-size: 0.9rem;
+            color: var(--text-highlight);
+            letter-spacing: 0.5px;
+        }
+
+        .rpg-card-text {
+            font-size: 0.82rem;
+            color: var(--text-main);
+            line-height: 1.5;
+            background: rgba(5, 10, 20, 0.5);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 2px solid var(--cyan-secondary);
+        }
+
+        /* MISSÃO DE REGISTRO NO CADERNO (SAVE GAME FÍSICO) */
+        .notebook-save-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px dashed var(--accent-yellow);
+            border-radius: 8px;
+            padding: 18px;
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+        }
+
+        .notebook-save-title {
+            font-family: var(--font-tech);
+            font-size: 0.95rem;
+            color: var(--accent-yellow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notebook-save-text {
+            font-size: 0.88rem;
+            color: #fef08a;
+            line-height: 1.5;
+        }
+
+        /* Assistente de Calculo */
+        .solved-example-box {
+            background: rgba(5, 10, 20, 0.8);
+            border: 1px dashed var(--border-blueprint);
+            border-radius: 6px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-family: var(--font-code);
+            font-size: 0.82rem;
+        }
+
+        .solved-step {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 10px 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--cyan-primary);
+        }
+
+        .solved-step .step-title {
+            color: var(--cyan-secondary);
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-family: var(--font-tech);
+        }
+
+        /* Notification Toast para Modo Professor Secreto */
+        .teacher-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--cyan-primary);
+            border-left: 4px solid var(--cyan-primary);
+            box-shadow: 0 10px 30px rgba(0, 242, 254, 0.3);
+            border-radius: 6px;
+            padding: 14px 20px;
+            color: var(--cyan-primary);
+            font-family: var(--font-tech);
+            font-size: 0.85rem;
+            z-index: 1000;
+            display: none;
+            animation: slideUp 0.3s ease;
+        }
+
+        .teacher-toast.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Guia de Formulas */
+        .formulas-card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border-blueprint);
+            border-radius: 6px;
+            padding: 14px 16px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+        }
+
+        .formulas-card h5 {
+            font-family: var(--font-tech);
+            color: var(--cyan-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .formula-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-family: var(--font-code);
+            color: var(--text-muted);
+        }
+
+        .formula-item {
+            background: rgba(5, 10, 20, 0.5);
+            padding: 6px 10px;
+            border-radius: 4px;
+            border-left: 2px solid var(--cyan-secondary);
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-code);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Cabecalho -->
+        <header>
+            <div class="header-top-bar">
+                <span style="font-size: 0.7rem; font-family: var(--font-code); color: var(--text-muted);">SISTEMA DE SIMULAÇÃO MAKER v3.0</span>
+                <button id="btn-reopen-tutorial" class="btn-tutorial-open">
+                    ❓ Ver Tutorial
+                </button>
+            </div>
+            <h1 id="main-title" title="Dica: Clique 3 vezes seguidas para o Modo Professor">Simulador Eólico Maker</h1>
+            <p>Construa passo a passo, calcule a eficiência e acenda o sistema de iluminação da escola!</p>
+            
+            <div class="step-bar">
+                <div class="step-pill active" id="step1-pill">
+                    <span class="step-num">1</span> ESTEIRA DE MONTAGEM
+                </div>
+                <div class="step-pill" id="step2-pill">
+                    <span class="step-num">2</span> TESTES & CÁLCULOS
+                </div>
+            </div>
+        </header>
+
+        <!-- TELA 1: Esteira de Montagem Passo a Passo -->
+        <section id="screen-assembly" class="view-section active">
+            <div class="blueprint-card">
+                <div class="card-title">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                        ESTEIRA DE MONTAGEM (CONSTRUÇÃO PASSO A PASSO)
+                    </span>
+                    <span id="assembly-progress-badge" class="opt-badge">PEÇAS: 0 / 5</span>
+                </div>
+
+                <!-- Tabs dos 5 Passos de Montagem -->
+                <div class="assembly-stepper">
+                    <div class="step-tab active" data-tab="1">
+                        <span class="tab-num">1</span>
+                        <span class="tab-label">Torre</span>
+                    </div>
+                    <div class="step-tab" data-tab="2">
+                        <span class="tab-num">2</span>
+                        <span class="tab-label">Gerador</span>
+                    </div>
+                    <div class="step-tab" data-tab="3">
+                        <span class="tab-num">3</span>
+                        <span class="tab-label">Material Pás</span>
+                    </div>
+                    <div class="step-tab" data-tab="4">
+                        <span class="tab-num">4</span>
+                        <span class="tab-label">Tamanho Pás</span>
+                    </div>
+                    <div class="step-tab" data-tab="5">
+                        <span class="tab-num">5</span>
+                        <span class="tab-label">Cenário</span>
+                    </div>
+                </div>
+
+                <div class="assembly-grid">
+                    
+                    <!-- Coluna Esquerda: Stage Grafico SVG Dinamico -->
+                    <div class="assembly-stage">
+                        <div class="stage-title" id="stage-status-title">BANCADA VAZIA - PASSO 1 DE 5</div>
+                        
+                        <div class="stage-svg-wrapper">
+                            <svg id="assembly-svg" width="260" height="260" viewBox="0 0 260 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="130" cy="130" r="120" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4 4"/>
+                                <line x1="130" y1="10" x2="130" y2="250" stroke="#1e3a5f" stroke-width="0.5"/>
+                                <line x1="10" y1="130" x2="250" y2="130" stroke="#1e3a5f" stroke-width="0.5"/>
+
+                                <!-- 5. CENÁRIO -->
+                                <g id="piece-scenario" class="svg-piece">
+                                    <path id="svg-scenery-bg" d="M10 240 L250 240" stroke="#00f2fe" stroke-width="2"/>
+                                    <path d="M20 60 Q50 55 90 60" stroke="#00f2fe" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                                    <path d="M10 110 Q40 105 80 110" stroke="#00f2fe" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                                </g>
+
+                                <!-- 1. TORRE -->
+                                <g id="piece-tower" class="svg-piece">
+                                    <path id="svg-tower-body" d="M120 240 L126 90 L134 90 L140 240 Z" fill="#1e293b" stroke="#00f2fe" stroke-width="1.5"/>
+                                    <path d="M110 240 L150 240" stroke="#00f2fe" stroke-width="3" stroke-linecap="round"/>
+                                </g>
+
+                                <!-- 2. GERADOR -->
+                                <g id="piece-generator" class="svg-piece">
+                                    <rect id="svg-generator-box" x="118" y="75" width="24" height="22" rx="3" fill="#0f172a" stroke="#00f2fe" stroke-width="2"/>
+                                    <circle cx="130" cy="86" r="6" fill="#00f2fe"/>
+                                </g>
+
+                                <!-- 3 & 4. PÁS -->
+                                <g id="piece-blades" class="svg-piece">
+                                    <g id="svg-blades-group" transform="translate(130, 86)">
+                                        <path id="blade-1" d="M0 0 Q-5 -30 0 -55 Q5 -30 0 0 Z" fill="url(#blade-mat-grad)" stroke="#00f2fe" stroke-width="1"/>
+                                        <path id="blade-2" d="M0 0 Q25 15 48 27 Q18 25 0 0 Z" fill="url(#blade-mat-grad)" stroke="#00f2fe" stroke-width="1"/>
+                                        <path id="blade-3" d="M0 0 Q-25 15 -48 27 Q-18 25 0 0 Z" fill="url(#blade-mat-grad)" stroke="#00f2fe" stroke-width="1"/>
+                                        <circle cx="0" cy="0" r="4" fill="#00f2fe"/>
+                                    </g>
+                                </g>
+
+                                <defs>
+                                    <linearGradient id="blade-mat-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop id="grad-stop-1" offset="0%" stop-color="#00f2fe" stop-opacity="0.9"/>
+                                        <stop id="grad-stop-2" offset="100%" stop-color="#0055ff" stop-opacity="0.4"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+
+                        <div style="font-family: var(--font-code); font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+                            Componente Atual: <span id="current-stage-component-name" style="color: var(--cyan-primary); font-weight: bold;">Torre Estrutural</span>
+                        </div>
+                    </div>
+
+                    <!-- Coluna Direita: Painel de Opcoes dos Passos -->
+                    <div>
+                        <!-- PASSO 1: Torre -->
+                        <div class="step-content-panel active" data-step="1">
+                            <p class="step-instruction"><strong>Passo 1:</strong> Escolha a torre de sustentação do seu aerogerador. A altura impacta a estabilidade e captação do vento.</p>
+                            <div class="options-vertical-grid">
+                                <button class="piece-option-btn" data-step="1" data-val="1.5m" data-name="Torre Baixa (1,5 m)">
+                                    <div>
+                                        <div class="opt-title">Torre Baixa</div>
+                                        <div class="opt-desc">Estrutura compacta (1,5 metros)</div>
+                                    </div>
+                                    <span class="opt-badge">1,5 m</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="1" data-val="2.5m" data-name="Torre Média (2,5 m)">
+                                    <div>
+                                        <div class="opt-title">Torre Média</div>
+                                        <div class="opt-desc">Padrão didático equilibrado (2,5 metros)</div>
+                                    </div>
+                                    <span class="opt-badge">2,5 m</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="1" data-val="4.0m" data-name="Torre Alta (4,0 m)">
+                                    <div>
+                                        <div class="opt-title">Torre Alta</div>
+                                        <div class="opt-desc">Coluna elevada para ventos livres (4,0 metros)</div>
+                                    </div>
+                                    <span class="opt-badge">4,0 m</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PASSO 2: Gerador Motor DC -->
+                        <div class="step-content-panel" data-step="2">
+                            <p class="step-instruction"><strong>Passo 2:</strong> Escolha o motorzinho DC que converterá a rotação mecânica em energia elétrica.</p>
+                            <div class="options-vertical-grid">
+                                <button class="piece-option-btn" data-step="2" data-val="dc3v" data-name="Motor DC 3V Didático">
+                                    <div>
+                                        <div class="opt-title">Motor DC 3V</div>
+                                        <div class="opt-desc">Baixa resistência magnética, ideal para ventos fracos</div>
+                                    </div>
+                                    <span class="opt-badge">3 Volts</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="2" data-val="dc6v" data-name="Motor DC 6V Eficiente">
+                                    <div>
+                                        <div class="opt-title">Motor DC 6V</div>
+                                        <div class="opt-desc">Motor balanceado para microgeradores</div>
+                                    </div>
+                                    <span class="opt-badge">6 Volts</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="2" data-val="dc12v" data-name="Motor High-Torque 12V">
+                                    <div>
+                                        <div class="opt-title">Motor High-Torque 12V</div>
+                                        <div class="opt-desc">Ímãs de Neodímio para maior saída de tensão</div>
+                                    </div>
+                                    <span class="opt-badge">12 Volts</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PASSO 3: Material das Pas (Cp) -->
+                        <div class="step-content-panel" data-step="3">
+                            <p class="step-instruction"><strong>Passo 3:</strong> Escolha o material de fabricação das pás. O material define o Coeficiente de Eficiência Aerodinâmica ($C_p$).</p>
+                            <div class="options-vertical-grid">
+                                <button class="piece-option-btn" data-step="3" data-cp="0.10" data-name="Garrafa PET Recortada" data-mat="pet">
+                                    <div>
+                                        <div class="opt-title">Garrafa PET Recortada</div>
+                                        <div class="opt-desc">Artesanal / Flexível</div>
+                                    </div>
+                                    <span class="opt-badge">Cₚ = 10% (0,10)</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="3" data-cp="0.20" data-name="Tubo de PVC Curvado" data-mat="pvc">
+                                    <div>
+                                        <div class="opt-title">Tubo de PVC Curvado</div>
+                                        <div class="opt-desc">Curvatura rígida e aerodinâmica</div>
+                                    </div>
+                                    <span class="opt-badge">Cₚ = 20% (0,20)</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="3" data-cp="0.30" data-name="Madeira Esculpida" data-mat="wood">
+                                    <div>
+                                        <div class="opt-title">Madeira Esculpida</div>
+                                        <div class="opt-desc">Perfil alar otimizado com acabamento fino</div>
+                                    </div>
+                                    <span class="opt-badge">Cₚ = 30% (0,30)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PASSO 4: Tamanho das Pas (R) -->
+                        <div class="step-content-panel" data-step="4">
+                            <p class="step-instruction"><strong>Passo 4:</strong> Escolha o tamanho (comprimento) das pás. Isso define o Raio ($R$) do círculo de varredura.</p>
+                            <div class="options-vertical-grid">
+                                <button class="piece-option-btn" data-step="4" data-r="0.15" data-name="Pequena (15 cm)">
+                                    <div>
+                                        <div class="opt-title">Pás Pequenas</div>
+                                        <div class="opt-desc">Comprimento: 15 cm</div>
+                                    </div>
+                                    <span class="opt-badge">R = 0,15 m</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="4" data-r="0.30" data-name="Média (30 cm)">
+                                    <div>
+                                        <div class="opt-title">Pás Médias</div>
+                                        <div class="opt-desc">Comprimento: 30 cm</div>
+                                    </div>
+                                    <span class="opt-badge">R = 0,30 m</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="4" data-r="0.50" data-name="Grande (50 cm)">
+                                    <div>
+                                        <div class="opt-title">Pás Grandes</div>
+                                        <div class="opt-desc">Comprimento: 50 cm</div>
+                                    </div>
+                                    <span class="opt-badge">R = 0,50 m</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PASSO 5: Cenario / Vento (v) -->
+                        <div class="step-content-panel" data-step="5">
+                            <p class="step-instruction"><strong>Passo 5:</strong> Escolha o local de instalação na escola. Isso define a velocidade média do vento ($v$).</p>
+                            <div class="options-vertical-grid">
+                                <button class="piece-option-btn" data-step="5" data-v="1" data-name="Atrás do Muro">
+                                    <div>
+                                        <div class="opt-title">Atrás do Muro</div>
+                                        <div class="opt-desc">Vento turbulento e fraco</div>
+                                    </div>
+                                    <span class="opt-badge">v = 1 m/s</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="5" data-v="4" data-name="Corredor Lateral">
+                                    <div>
+                                        <div class="opt-title">Corredor Lateral</div>
+                                        <div class="opt-desc">Canalizado com Efeito Venturi</div>
+                                    </div>
+                                    <span class="opt-badge">v = 4 m/s</span>
+                                </button>
+                                <button class="piece-option-btn" data-step="5" data-v="6" data-name="Pátio Aberto">
+                                    <div>
+                                        <div class="opt-title">Pátio Aberto</div>
+                                        <div class="opt-desc">Fluxo de vento livre sem obstáculos</div>
+                                    </div>
+                                    <span class="opt-badge">v = 6 m/s</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="stepper-nav">
+                            <button id="btn-prev-step" class="btn-secondary" disabled>
+                                ◄ Passo Anterior
+                            </button>
+                            <button id="btn-next-step" class="btn-secondary">
+                                Próximo Passo ►
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                    <button id="btn-to-testing" class="btn-primary" disabled>
+                        Ir para a Estação de Cálculo ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TELA 2: Painel de Testes e Calculos -->
+        <section id="screen-testing" class="view-section">
+            <div class="test-panel-grid">
+                
+                <!-- Coluna Esquerda: Animacao & Diagnostico -->
+                <div class="blueprint-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="card-title">
+                            <span id="display-card-header-title">PROTÓTIPO EM TESTE</span>
+                            <span class="opt-badge" id="display-card-badge">ENERGIA ESCOLA</span>
+                        </div>
+
+                        <!-- Display Visual da Turbina & Blueprint da Escola -->
+                        <div class="turbine-display">
+                            <!-- Anel de Pulso de Energia Ciano (REQUISITO 1) -->
+                            <div id="energy-pulse-ring" class="energy-pulse-ring"></div>
+
+                            <!-- Turbina SVG Padrão -->
+                            <div class="turbine-svg-container" id="turbine-container">
+                                <svg width="200" height="200" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M92 210 L96 75 L104 75 L108 210 Z" fill="#1e293b" stroke="#00f2fe" stroke-width="1.5"/>
+                                    <path d="M85 210 L115 210" stroke="#00f2fe" stroke-width="3" stroke-linecap="round"/>
+                                    <circle cx="100" cy="75" r="12" fill="#0f172a" stroke="#00f2fe" stroke-width="2"/>
+                                    
+                                    <g id="turbine-blades" class="turbine-blades">
+                                        <path d="M100 75 Q96 40 100 10 Q104 40 100 75 Z" fill="url(#blade-gradient-t2)" stroke="#00f2fe" stroke-width="1"/>
+                                        <path d="M100 75 Q130 95 156 132 Q125 110 100 75 Z" fill="url(#blade-gradient-t2)" stroke="#00f2fe" stroke-width="1"/>
+                                        <path d="M100 75 Q70 95 44 132 Q75 110 100 75 Z" fill="url(#blade-gradient-t2)" stroke="#00f2fe" stroke-width="1"/>
+                                        <circle cx="100" cy="75" r="5" fill="#00f2fe"/>
+                                    </g>
+                                    
+                                    <defs>
+                                        <linearGradient id="blade-gradient-t2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.8"/>
+                                            <stop offset="100%" stop-color="#0055ff" stop-opacity="0.3"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+
+                            <!-- PLANTA ESTILIZADA BLUEPRINT DA ESCOLA ESTADUAL JOSÉ MAMEDE DE AQUINO (REQUISITO 1) -->
+                            <div id="school-blueprint-map" class="school-map-wrapper">
+                                <svg width="250" height="170" viewBox="0 0 250 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Contorno Principal da Escola -->
+                                    <rect x="10" y="10" width="230" height="150" rx="4" stroke="#1e3a5f" stroke-width="2" fill="none"/>
+                                    
+                                    <!-- Setor 1: Sala de Tecnologia (ILUMINADO) -->
+                                    <rect id="map-tech-room" x="20" y="20" width="90" height="60" fill="rgba(0, 242, 254, 0.2)" stroke="#00f2fe" stroke-width="1.5"/>
+                                    <text x="30" y="55" fill="#00f2fe" font-family="Orbitron" font-size="8" font-weight="bold">SALA TECNOLOGIA</text>
+                                    
+                                    <!-- Setor 2: Pátio Central (ILUMINADO) -->
+                                    <rect id="map-patio" x="120" y="20" width="110" height="90" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="1.5"/>
+                                    <text x="135" y="70" fill="#10b981" font-family="Orbitron" font-size="9" font-weight="bold">PÁTIO CENTRAL</text>
+                                    
+                                    <!-- Setor 3: Bloco Administrativo -->
+                                    <rect x="20" y="90" width="90" height="60" stroke="#1e3a5f" stroke-width="1" fill="none"/>
+                                    <text x="30" y="125" fill="#94a3b8" font-family="Orbitron" font-size="7">ADMINISTRAÇÃO</text>
+
+                                    <!-- Cabos de Energia Conectando Turbina ao Mapa -->
+                                    <path d="M5 85 L20 50" stroke="#00f2fe" stroke-width="2" stroke-dasharray="3 3"/>
+                                    <path d="M5 85 L120 65" stroke="#10b981" stroke-width="2" stroke-dasharray="3 3"/>
+
+                                    <circle cx="65" cy="40" r="4" fill="#00f2fe"/>
+                                    <circle cx="175" cy="55" r="4" fill="#10b981"/>
+                                </svg>
+                                <div style="font-family: var(--font-tech); font-size: 0.7rem; color: var(--cyan-primary); margin-top: 4px;">
+                                    EE JOSÉ MAMEDE DE AQUINO - REDE ELETRICAMENTE ALIMENTADA
+                                </div>
+                            </div>
+
+                            <div class="led-status-box">
+                                <div id="led-indicator" class="led-light"></div>
+                                <span id="led-text" class="led-label">SISTEMA DESLIGADO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="active-specs-grid">
+                        <div class="active-spec-card">
+                            <span class="lbl">MATERIAL (Cₚ)</span>
+                            <span class="val" id="disp-cp">--</span>
+                        </div>
+                        <div class="active-spec-card">
+                            <span class="lbl">RAIO (R)</span>
+                            <span class="val" id="disp-r">--</span>
+                        </div>
+                        <div class="active-spec-card">
+                            <span class="lbl">VENTO (v)</span>
+                            <span class="val" id="disp-v">--</span>
+                        </div>
+                        <div class="active-spec-card">
+                            <span class="lbl">DENS. AR (ρ)</span>
+                            <span class="val">1,22 kg/m³</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Formulario de Desafio dos Alunos -->
+                <div class="blueprint-card">
+                    <div class="card-title">
+                        <span>ESTAÇÃO DE CÁLCULO</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-code);">[ Digite seus resultados ]</span>
+                    </div>
+
+                    <form id="calc-form" class="calc-form" onsubmit="return false;">
+                        
+                        <!-- Input 1 -->
+                        <div class="input-group">
+                            <div class="input-label-row">
+                                <span>1. Área de varredura (A):</span>
+                                <div class="tooltip-trigger" tabindex="0">?
+                                    <div class="tooltip-bubble">
+                                        É o tamanho do círculo invisível que as hélices formam ao girar. Quanto maior a pá, mais vento ela captura!
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-wrapper">
+                                <input type="text" id="input-area" class="input-field" placeholder="" autocomplete="off" inputmode="decimal">
+                                <span class="input-unit">m²</span>
+                            </div>
+                            <div id="hint-area" class="field-math-hint">
+                                Ops! Lembre-se de multiplicar o Raio por ele mesmo primeiro (R · R), e depois multiplicar por 3,14.
+                            </div>
+                        </div>
+
+                        <!-- Input 2 -->
+                        <div class="input-group">
+                            <div class="input-label-row">
+                                <span>2. Potência Bruta (P_b):</span>
+                                <div class="tooltip-trigger" tabindex="0">?
+                                    <div class="tooltip-bubble">
+                                        É a energia total que o vento carrega. Lembre-se de multiplicar a velocidade do vento por ela mesma três vezes (v³).
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-wrapper">
+                                <input type="text" id="input-pb" class="input-field" placeholder="" autocomplete="off" inputmode="decimal">
+                                <span class="input-unit">W</span>
+                            </div>
+                            <div id="hint-pb" class="field-math-hint">
+                                A área está certa! Para a Potência, lembre-se de fazer v · v · v antes de multiplicar pelo resto.
+                            </div>
+                        </div>
+
+                        <!-- Input 3 -->
+                        <div class="input-group">
+                            <div class="input-label-row">
+                                <span>3. Potência Real final (P_r):</span>
+                                <div class="tooltip-trigger" tabindex="0">?
+                                    <div class="tooltip-bubble">
+                                        O Limite de Betz e o atrito não deixam a gente aproveitar tudo. É a energia final que seu gerador consegue extrair.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-wrapper">
+                                <input type="text" id="input-pr" class="input-field" placeholder="" autocomplete="off" inputmode="decimal">
+                                <span class="input-unit">W</span>
+                            </div>
+                            <div id="hint-pr" class="field-math-hint">
+                                Quase lá! Multiplique a sua Potência Bruta (o número acima) pela porcentagem decimal do material que você escolheu.
+                            </div>
+                        </div>
+
+                        <div id="feedback-box" class="feedback-box">
+                            <h4 id="feedback-title">Diagnóstico</h4>
+                            <p id="feedback-message"></p>
+                        </div>
+
+                        <div class="actions-row">
+                            <button id="btn-submit-calc" type="button" class="btn-primary" style="flex: 2;">
+                                ⚡ LIGAR TURBINA
+                            </button>
+                            <button id="btn-reconfigure" type="button" class="btn-secondary" style="flex: 1;">
+                                🔄 Alterar Montagem
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="formulas-card">
+                        <h5>
+                            <span>📐 FORMULÁRIO DE REFERÊNCIA</span>
+                            <button id="btn-open-math-help" class="btn-secondary" style="padding: 4px 10px; font-size: 0.72rem;">
+                                💡 Precisa de ajuda?
+                            </button>
+                        </h5>
+                        <div class="formula-list">
+                            <div class="formula-item">Área de Varredura: <strong>A = 3,14 · R²</strong></div>
+                            <div class="formula-item">Potência Bruta: <strong>P_b = 0,5 · 1,22 · A · v³</strong></div>
+                            <div class="formula-item">Potência Real: <strong>P_r = P_b · C_p</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <footer>
+            Simulador Eólico Maker &copy; 2026 - Desenvolvido para Feiras de Ciências e Aulas Maker
+        </footer>
+    </div>
+
+    <!-- TUTORIAL OVERLAY -->
+    <div id="tutorial-overlay" class="modal-overlay">
+        <div class="modal-card" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3>🚀 GUIA DO ENGENHEIRO MAKER</h3>
+                <button id="btn-close-tutorial-x" class="modal-close-btn" title="Fechar tutorial">&times;</button>
+            </div>
+            
+            <div class="tutorial-step-content" id="tutorial-step-text"></div>
+
+            <div class="tutorial-dots">
+                <div class="tutorial-dot active" data-tstep="1"></div>
+                <div class="tutorial-dot" data-tstep="2"></div>
+                <div class="tutorial-dot" data-tstep="3"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="btn-prev-tutorial" class="btn-secondary" disabled>◄ Anterior</button>
+                <button id="btn-next-tutorial" class="btn-primary">Próximo ►</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ASSISTENTE DE CÁLCULO -->
+    <div id="math-help-overlay" class="modal-overlay">
+        <div class="modal-card" style="max-width: 580px;">
+            <div class="modal-header">
+                <h3>💡 ASSISTENTE DE CÁLCULO (EXEMPLO PASSO A PASSO)</h3>
+                <button id="btn-close-math-help-x" class="modal-close-btn" title="Fechar ajuda">&times;</button>
+            </div>
+
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
+                Veja um exemplo prático resolvido usando valores fictícios para entender como aplicar as fórmulas no seu caderno:
+            </p>
+
+            <div class="solved-example-box">
+                <div style="color: var(--cyan-primary); font-weight: bold; margin-bottom: 2px;">
+                    📌 DADOS DE EXEMPLO: Raio R = 0,20 m | Vento v = 3 m/s | Material Cₚ = 0,20
+                </div>
+
+                <div class="solved-step">
+                    <div class="step-title">1. CÁLCULO DA ÁREA (A = 3,14 · R²)</div>
+                    <div>• <strong>R² significa R · R:</strong> 0,20 · 0,20 = <strong>0,04</strong></div>
+                    <div>• <strong>Multiplique por 3,14:</strong> A = 3,14 · 0,04 = <span style="color: var(--cyan-primary); font-weight: bold;">0,1256 m²</span> (ou ~0,13 m²)</div>
+                </div>
+
+                <div class="solved-step">
+                    <div class="step-title">2. CÁLCULO DA POTÊNCIA BRUTA (P_b = 0,5 · 1,22 · A · v³)</div>
+                    <div>• <strong>v³ significa v · v · v:</strong> 3 · 3 · 3 = <strong>27</strong></div>
+                    <div>• <strong>Aplique na fórmula:</strong> P_b = 0,5 · 1,22 · 0,1256 · 27 = <span style="color: var(--cyan-primary); font-weight: bold;">2,06 W</span></div>
+                </div>
+
+                <div class="solved-step">
+                    <div class="step-title">3. CÁLCULO DA POTÊNCIA REAL (P_r = P_b · C_p)</div>
+                    <div>• <strong>Multiplique pela Eficiência:</strong> P_r = 2,06 · 0,20 = <span style="color: var(--accent-green); font-weight: bold;">0,412 W</span></div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <button id="btn-close-math-help" class="btn-primary">
+                    Entendido! Voltar aos Cálculos ➔
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REQUISITOS 2 & 3: RECOMPENSA LOOT CARDS & SAVE GAME FÍSICO -->
+    <div id="loot-modal-overlay" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 style="color: var(--accent-green);">🏆 ENGENHARIA APROVADA! MANUAIS DE PROJETO DESBLOQUEADOS</h3>
+                <button id="btn-close-loot-x" class="modal-close-btn" title="Fechar">&times;</button>
+            </div>
+
+            <p style="font-size: 0.88rem; color: var(--text-main); line-height: 1.5;">
+                Parabéns, Engenheiro(a)! Seu protótipo funcionou com perfeição. Veja as <strong>Cartas de Conhecimento</strong> desbloqueadas que explicam por que sua turbina funcionou:
+            </p>
+
+            <!-- 2. O LOOT: 3 CARTAS COLECONÁVEIS DE RPG DA FÍSICA -->
+            <div class="loot-cards-grid">
+                
+                <!-- Carta 1 -->
+                <div class="rpg-card">
+                    <span class="rpg-card-badge">MANUAL #01</span>
+                    <div class="rpg-card-header">
+                        <span class="rpg-card-icon">🌬️</span>
+                        <span class="rpg-card-title">O Sopro de Venturi</span>
+                    </div>
+                    <div class="rpg-card-text">
+                        "O ar é espremido em corredores e acelera. Na nossa fórmula, a velocidade é elevada ao cubo (v³). Por isso, um vento um pouco mais rápido gera <strong>MUITO mais energia!</strong>"
+                    </div>
+                </div>
+
+                <!-- Carta 2 -->
+                <div class="rpg-card">
+                    <span class="rpg-card-badge">MANUAL #02</span>
+                    <div class="rpg-card-header">
+                        <span class="rpg-card-icon">🛡️</span>
+                        <span class="rpg-card-title">A Fronteira de Betz</span>
+                    </div>
+                    <div class="rpg-card-text">
+                        "Nenhuma turbina rouba 100% da força do vento, senão o ar pararia e formaria uma parede. A eficiência (Cₚ) do nosso material diz o quanto realmente conseguimos aproveitar."
+                    </div>
+                </div>
+
+                <!-- Carta 3 -->
+                <div class="rpg-card">
+                    <span class="rpg-card-badge">MANUAL #03</span>
+                    <div class="rpg-card-header">
+                        <span class="rpg-card-icon">🎯</span>
+                        <span class="rpg-card-title">O Círculo de Varredura</span>
+                    </div>
+                    <div class="rpg-card-text">
+                        "As hélices desenham uma área invisível no ar. Dobrar o tamanho do Raio (R) não dobra a energia, multiplica ela por <strong>QUATRO</strong>, capturando uma massa de ar muito maior."
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 3. O "SAVE GAME" FÍSICO: REGISTRO OBRIGATÓRIO NO CADERNO -->
+            <div class="notebook-save-box">
+                <div class="notebook-save-title">
+                    <span>💾 MISSÃO DE REGISTRO (SAVE GAME FÍSICO)</span>
+                </div>
+                <div class="notebook-save-text">
+                    Este sistema não salva na nuvem. Para garantir sua nota bimestral de Projetos Maker, <strong>copie o conteúdo destas 3 Cartas de Conhecimento para o seu caderno</strong>. Elas são a prova física da sua aprovação!
+                </div>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button id="btn-restart-game" class="btn-primary">
+                    🔄 Fazer Novo Projeto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast para Gabarito Professor -->
+    <div id="teacher-toast" class="teacher-toast">
+        🔓 MODO PROFESSOR ATIVADO: Gabarito preenchido automaticamente!
+    </div>
+
+    <!-- LOGICA JAVASCRIPT UPGRADED -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Estado Global da Montagem
+            const assemblyState = {
+                tower: null,
+                generator: null,
+                material: null,
+                radius: null,
+                location: null
+            };
+
+            let currentStep = 1;
+            const TOTAL_STEPS = 5;
+
+            // Elementos DOM - Esteira & Passos
+            const stepTabs = document.querySelectorAll('.step-tab');
+            const stepContentPanels = document.querySelectorAll('.step-content-panel');
+            const pieceOptionBtns = document.querySelectorAll('.piece-option-btn');
+            const btnPrevStep = document.getElementById('btn-prev-step');
+            const btnNextStep = document.getElementById('btn-next-step');
+            const btnToTesting = document.getElementById('btn-to-testing');
+            const assemblyProgressBadge = document.getElementById('assembly-progress-badge');
+            const currentStageComponentName = document.getElementById('current-stage-component-name');
+            const stageStatusTitle = document.getElementById('stage-status-title');
+
+            // SVG Elements
+            const pieceTower = document.getElementById('piece-tower');
+            const pieceGenerator = document.getElementById('piece-generator');
+            const pieceBlades = document.getElementById('piece-blades');
+            const pieceScenario = document.getElementById('piece-scenario');
+            const svgTowerBody = document.getElementById('svg-tower-body');
+            const svgBladesGroup = document.getElementById('svg-blades-group');
+            const gradStop1 = document.getElementById('grad-stop-1');
+            const gradStop2 = document.getElementById('grad-stop-2');
+
+            // Transicao de Telas
+            const screenAssembly = document.getElementById('screen-assembly');
+            const screenTesting = document.getElementById('screen-testing');
+            const step1Pill = document.getElementById('step1-pill');
+            const step2Pill = document.getElementById('step2-pill');
+            const btnReconfigure = document.getElementById('btn-reconfigure');
+
+            // Tela 2 Elements
+            const dispCp = document.getElementById('disp-cp');
+            const dispR = document.getElementById('disp-r');
+            const dispV = document.getElementById('disp-v');
+            const inputArea = document.getElementById('input-area');
+            const inputPb = document.getElementById('input-pb');
+            const inputPr = document.getElementById('input-pr');
+            const hintArea = document.getElementById('hint-area');
+            const hintPb = document.getElementById('hint-pb');
+            const hintPr = document.getElementById('hint-pr');
+            const btnSubmitCalc = document.getElementById('btn-submit-calc');
+            const feedbackBox = document.getElementById('feedback-box');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackMessage = document.getElementById('feedback-message');
+            
+            const turbineContainer = document.getElementById('turbine-container');
+            const turbineBlades = document.getElementById('turbine-blades');
+            const ledIndicator = document.getElementById('led-indicator');
+            const ledText = document.getElementById('led-text');
+
+            // Novas Variaveis do Power-Up & Loot Cards
+            const energyPulseRing = document.getElementById('energy-pulse-ring');
+            const schoolBlueprintMap = document.getElementById('school-blueprint-map');
+            const displayCardHeaderTitle = document.getElementById('display-card-header-title');
+            const displayCardBadge = document.getElementById('display-card-badge');
+
+            const lootModalOverlay = document.getElementById('loot-modal-overlay');
+            const btnCloseLootX = document.getElementById('btn-close-loot-x');
+            const btnRestartGame = document.getElementById('btn-restart-game');
+
+            // Tutorial & Math Help Modals
+            const tutorialOverlay = document.getElementById('tutorial-overlay');
+            const tutorialStepText = document.getElementById('tutorial-step-text');
+            const btnPrevTutorial = document.getElementById('btn-prev-tutorial');
+            const btnNextTutorial = document.getElementById('btn-next-tutorial');
+            const btnCloseTutorialX = document.getElementById('btn-close-tutorial-x');
+            const btnReopenTutorial = document.getElementById('btn-reopen-tutorial');
+            const tutorialDots = document.querySelectorAll('.tutorial-dot');
+
+            const mathHelpOverlay = document.getElementById('math-help-overlay');
+            const btnOpenMathHelp = document.getElementById('btn-open-math-help');
+            const btnCloseMathHelp = document.getElementById('btn-close-math-help');
+            const btnCloseMathHelpX = document.getElementById('btn-close-math-help-x');
+
+            const mainTitle = document.getElementById('main-title');
+            const teacherToast = document.getElementById('teacher-toast');
+
+            // --- TUTORIAL OVERLAY LOGIC ---
+            const tutorialSteps = [
+                {
+                    title: "👋 Passo 1 de 3: Bem-vindo Engenheiro(a)!",
+                    body: "Sua missão é construir uma turbina artesanal capaz de acender uma lâmpada da escola. Prepare-se para colocar as mãos na massa!"
+                },
+                {
+                    title: "🛠️ Passo 2 de 3: A Esteira de Montagem",
+                    body: "Na Esteira de Montagem, você escolherá as peças. Lembre-se: <strong>Pás maiores capturam mais vento, mas o vento forte é o que realmente gera energia!</strong>"
+                },
+                {
+                    title: "📐 Passo 3 de 3: A Estação de Cálculo",
+                    body: "Na Estação de Cálculo, você usará as fórmulas para provar que seu projeto funciona. <strong>Não se preocupe, teremos dicas de matemática para ajudar em cada etapa!</strong>"
+                }
+            ];
+
+            let currentTutorialStep = 0;
+
+            function showTutorialStep(idx) {
+                currentTutorialStep = idx;
+                const stepData = tutorialSteps[idx];
+                
+                tutorialStepText.innerHTML = `
+                    <h4 style="font-family: var(--font-tech); color: var(--cyan-primary); margin-bottom: 8px;">${stepData.title}</h4>
+                    <p style="color: var(--text-main); font-size: 0.95rem; line-height: 1.5;">${stepData.body}</p>
+                `;
+
+                tutorialDots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === idx);
+                });
+
+                btnPrevTutorial.disabled = (idx === 0);
+                if (idx === tutorialSteps.length - 1) {
+                    btnNextTutorial.textContent = "Começar Desafio! 🚀";
+                } else {
+                    btnNextTutorial.textContent = "Próximo ►";
+                }
+            }
+
+            function openTutorial() {
+                showTutorialStep(0);
+                tutorialOverlay.classList.add('active');
+            }
+
+            function closeTutorial() {
+                tutorialOverlay.classList.remove('active');
+            }
+
+            openTutorial();
+
+            btnNextTutorial.addEventListener('click', () => {
+                if (currentTutorialStep < tutorialSteps.length - 1) {
+                    showTutorialStep(currentTutorialStep + 1);
+                } else {
+                    closeTutorial();
+                }
+            });
+
+            btnPrevTutorial.addEventListener('click', () => {
+                if (currentTutorialStep > 0) {
+                    showTutorialStep(currentTutorialStep - 1);
+                }
+            });
+
+            btnCloseTutorialX.addEventListener('click', closeTutorial);
+            btnReopenTutorial.addEventListener('click', openTutorial);
+
+            // --- MATH HELP MODAL LOGIC ---
+            btnOpenMathHelp.addEventListener('click', () => {
+                mathHelpOverlay.classList.add('active');
+            });
+
+            function closeMathHelp() {
+                mathHelpOverlay.classList.remove('active');
+            }
+
+            btnCloseMathHelp.addEventListener('click', closeMathHelp);
+            btnCloseMathHelpX.addEventListener('click', closeMathHelp);
+
+            // --- STEPPER NAVIGATION LOGIC ---
+            function updateStepUI(stepNum) {
+                currentStep = stepNum;
+
+                stepTabs.forEach(tab => {
+                    const tabStep = parseInt(tab.getAttribute('data-tab'));
+                    tab.classList.toggle('active', tabStep === currentStep);
+                });
+
+                stepContentPanels.forEach(panel => {
+                    const panelStep = parseInt(panel.getAttribute('data-step'));
+                    panel.classList.toggle('active', panelStep === currentStep);
+                });
+
+                btnPrevStep.disabled = (currentStep === 1);
+                btnNextStep.disabled = (currentStep === TOTAL_STEPS);
+
+                const compNames = [
+                    "Torre Estrutural",
+                    "Gerador Motor DC",
+                    "Material das Pás",
+                    "Tamanho das Pás",
+                    "Cenário & Vento"
+                ];
+                currentStageComponentName.textContent = compNames[currentStep - 1];
+                stageStatusTitle.textContent = `PASSO ${currentStep} DE 5 - ${compNames[currentStep - 1].toUpperCase()}`;
+            }
+
+            stepTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const stepNum = parseInt(tab.getAttribute('data-tab'));
+                    updateStepUI(stepNum);
+                });
+            });
+
+            btnPrevStep.addEventListener('click', () => {
+                if (currentStep > 1) updateStepUI(currentStep - 1);
+            });
+
+            btnNextStep.addEventListener('click', () => {
+                if (currentStep < TOTAL_STEPS) updateStepUI(currentStep + 1);
+            });
+
+            // --- PIECE SELECTION & SVG DRAWING ---
+            pieceOptionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const step = parseInt(btn.getAttribute('data-step'));
+                    const name = btn.getAttribute('data-name');
+
+                    document.querySelectorAll(`.piece-option-btn[data-step="${step}"]`).forEach(b => {
+                        b.classList.remove('selected');
+                    });
+
+                    btn.classList.add('selected');
+
+                    const tab = document.querySelector(`.step-tab[data-tab="${step}"]`);
+                    if (tab) tab.classList.add('completed');
+
+                    if (step === 1) {
+                        const val = btn.getAttribute('data-val');
+                        assemblyState.tower = { val, name };
+                        pieceTower.classList.add('installed');
+                        
+                        if (val === '1.5m') {
+                            svgTowerBody.setAttribute('d', 'M120 240 L126 130 L134 130 L140 240 Z');
+                        } else if (val === '2.5m') {
+                            svgTowerBody.setAttribute('d', 'M120 240 L126 90 L134 90 L140 240 Z');
+                        } else if (val === '4.0m') {
+                            svgTowerBody.setAttribute('d', 'M120 240 L127 55 L133 55 L140 240 Z');
+                        }
+                    } else if (step === 2) {
+                        const val = btn.getAttribute('data-val');
+                        assemblyState.generator = { val, name };
+                        pieceGenerator.classList.add('installed');
+                    } else if (step === 3) {
+                        const cp = parseFloat(btn.getAttribute('data-cp'));
+                        const matKey = btn.getAttribute('data-mat');
+                        assemblyState.material = { cp, name, matKey };
+                        pieceBlades.classList.add('installed');
+
+                        if (matKey === 'pet') {
+                            gradStop1.setAttribute('stop-color', '#00f2fe');
+                            gradStop2.setAttribute('stop-color', '#0055ff');
+                        } else if (matKey === 'pvc') {
+                            gradStop1.setAttribute('stop-color', '#e2e8f0');
+                            gradStop2.setAttribute('stop-color', '#94a3b8');
+                        } else if (matKey === 'wood') {
+                            gradStop1.setAttribute('stop-color', '#d97706');
+                            gradStop2.setAttribute('stop-color', '#78350f');
+                        }
+                    } else if (step === 4) {
+                        const r = parseFloat(btn.getAttribute('data-r'));
+                        assemblyState.radius = { r, name };
+                        pieceBlades.classList.add('installed');
+
+                        let scale = 1;
+                        if (r === 0.15) scale = 0.65;
+                        else if (r === 0.30) scale = 1.0;
+                        else if (r === 0.50) scale = 1.35;
+
+                        svgBladesGroup.setAttribute('transform', `translate(130, 86) scale(${scale})`);
+                    } else if (step === 5) {
+                        const v = parseFloat(btn.getAttribute('data-v'));
+                        assemblyState.location = { v, name };
+                        pieceScenario.classList.add('installed');
+                    }
+
+                    checkAssemblyCompletion();
+
+                    if (step < TOTAL_STEPS) {
+                        setTimeout(() => updateStepUI(step + 1), 250);
+                    }
+                });
+            });
+
+            function checkAssemblyCompletion() {
+                let installedCount = 0;
+                if (assemblyState.tower) installedCount++;
+                if (assemblyState.generator) installedCount++;
+                if (assemblyState.material) installedCount++;
+                if (assemblyState.radius) installedCount++;
+                if (assemblyState.location) installedCount++;
+
+                assemblyProgressBadge.textContent = `PEÇAS: ${installedCount} / 5`;
+
+                if (installedCount === 5) {
+                    assemblyProgressBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+                    assemblyProgressBadge.style.color = 'var(--accent-green)';
+                    assemblyProgressBadge.style.borderColor = 'var(--accent-green)';
+                    btnToTesting.disabled = false;
+                } else {
+                    btnToTesting.disabled = true;
+                }
+            }
+
+            // --- NAVIGATION BETWEEN SCREENS ---
+            btnToTesting.addEventListener('click', () => {
+                if (!btnToTesting.disabled) {
+                    dispCp.textContent = `${(assemblyState.material.cp * 100).toFixed(0)}% (${assemblyState.material.cp.toFixed(2).replace('.', ',')})`;
+                    dispR.textContent = `${assemblyState.radius.r.toFixed(2).replace('.', ',')} m`;
+                    dispV.textContent = `${assemblyState.location.v} m/s`;
+
+                    resetFormAndVisuals();
+
+                    screenAssembly.classList.remove('active');
+                    screenTesting.classList.add('active');
+                    step1Pill.classList.remove('active');
+                    step2Pill.classList.add('active');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+
+            btnReconfigure.addEventListener('click', () => {
+                screenTesting.classList.remove('active');
+                screenAssembly.classList.add('active');
+                step2Pill.classList.remove('active');
+                step1Pill.classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // --- MATH MATCHING & TOLERANCE ---
+            function parseUserNumber(str) {
+                if (!str) return NaN;
+                const cleanStr = str.trim().replace(',', '.');
+                return parseFloat(cleanStr);
+            }
+
+            function isFriendlyEqual(userVal, targetVal) {
+                if (isNaN(userVal)) return false;
+                
+                const relError = Math.abs(userVal - targetVal) / targetVal;
+                const absDiff = Math.abs(userVal - targetVal);
+                
+                const targetRounded2 = parseFloat(targetVal.toFixed(2));
+                const targetFloor2 = Math.floor(targetVal * 100) / 100;
+                const targetCeil2 = Math.ceil(targetVal * 100) / 100;
+
+                return (
+                    relError <= 0.05 || 
+                    absDiff <= 0.02 || 
+                    Math.abs(userVal - targetRounded2) <= 0.01 ||
+                    Math.abs(userVal - targetFloor2) <= 0.01 ||
+                    Math.abs(userVal - targetCeil2) <= 0.01
+                );
+            }
+
+            function resetFormAndVisuals() {
+                inputArea.value = '';
+                inputPb.value = '';
+                inputPr.value = '';
+                
+                [inputArea, inputPb, inputPr].forEach(el => el.classList.remove('error-border'));
+                [hintArea, hintPb, hintPr].forEach(el => el.classList.remove('active'));
+                
+                feedbackBox.className = 'feedback-box';
+                feedbackBox.style.display = 'none';
+
+                turbineContainer.style.display = 'block';
+                schoolBlueprintMap.classList.remove('active');
+                displayCardHeaderTitle.textContent = 'PROTÓTIPO EM TESTE';
+                displayCardBadge.textContent = 'ENERGIA ESCOLA';
+
+                energyPulseRing.classList.remove('active');
+                turbineContainer.classList.remove('shake');
+                turbineBlades.className = 'turbine-blades';
+                ledIndicator.className = 'led-light';
+                ledText.textContent = 'SISTEMA DESLIGADO';
+                ledText.style.color = 'var(--text-main)';
+            }
+
+            // --- REQUISITO 1: ANIMAÇÃO DE IMPACTO (O POWER-UP) & VALIDAÇÃO ---
+            btnSubmitCalc.addEventListener('click', () => {
+                [inputArea, inputPb, inputPr].forEach(el => el.classList.remove('error-border'));
+                [hintArea, hintPb, hintPr].forEach(el => el.classList.remove('active'));
+                turbineContainer.classList.remove('shake');
+                energyPulseRing.classList.remove('active');
+
+                const R = assemblyState.radius.r;
+                const Cp = assemblyState.material.cp;
+                const v = assemblyState.location.v;
+                const RHO = 1.22;
+
+                const exactArea = 3.14 * Math.pow(R, 2);
+                const exactPb = 0.5 * RHO * exactArea * Math.pow(v, 3);
+                const exactPr = exactPb * Cp;
+
+                const userArea = parseUserNumber(inputArea.value);
+                const userPb = parseUserNumber(inputPb.value);
+                const userPr = parseUserNumber(inputPr.value);
+
+                const isAreaCorrect = isFriendlyEqual(userArea, exactArea);
+                const isPbCorrect = isFriendlyEqual(userPb, exactPb);
+                const isPrCorrect = isFriendlyEqual(userPr, exactPr);
+
+                if (!isAreaCorrect) {
+                    inputArea.classList.add('error-border');
+                    hintArea.classList.add('active');
+                    triggerFailureUI("Erro na Área de Varredura! Veja a dica abaixo do campo 1 para refazer seu cálculo.");
+                    return;
+                }
+
+                if (!isPbCorrect) {
+                    inputPb.classList.add('error-border');
+                    hintPb.classList.add('active');
+                    triggerFailureUI("Área correta! Mas a Potência Bruta falhou. Veja a dica matemática abaixo do campo 2.");
+                    return;
+                }
+
+                if (!isPrCorrect) {
+                    inputPr.classList.add('error-border');
+                    hintPr.classList.add('active');
+                    triggerFailureUI("Quase lá! A Potência Bruta está certa. Veja a dica abaixo do campo 3 para achar a Potência Real.");
+                    return;
+                }
+
+                // CÁLCULOS CORRETOS!
+                const THRESHOLD = 0.06;
+
+                if (exactPr < THRESHOLD) {
+                    turbineBlades.className = 'turbine-blades spin-slow';
+                    ledIndicator.className = 'led-light yellow';
+                    ledText.textContent = 'ENERGIA INSUFICIENTE';
+                    ledText.style.color = 'var(--accent-yellow)';
+
+                    feedbackBox.className = 'feedback-box warning';
+                    feedbackTitle.innerHTML = '⚡ Cálculos Corretos!';
+                    feedbackMessage.textContent = "Cálculos corretos! Porém, a energia é insuficiente para acender um LED de alto brilho. Tente pás maiores ou um local com mais vento.";
+                } else {
+                    // SUCESSO TOTAL & ANIMAÇÃO DE IMPACTO!
+                    
+                    // 1. Treme a tela levemente (Camera Shake)
+                    document.body.classList.add('camera-shake');
+                    setTimeout(() => document.body.classList.remove('camera-shake'), 600);
+
+                    // 2. Turbina gira em velocidade máxima e dispara onda ciano
+                    turbineBlades.className = 'turbine-blades spin-fast';
+                    energyPulseRing.classList.add('active');
+                    ledIndicator.className = 'led-light green';
+                    ledText.textContent = 'SISTEMA ONLINE - EE JOSÉ MAMEDE DE AQUINO';
+                    ledText.style.color = 'var(--accent-green)';
+
+                    feedbackBox.className = 'feedback-box success';
+                    feedbackTitle.innerHTML = '⚡ SISTEMA ONLINE!';
+                    feedbackMessage.textContent = "Sua turbina gerou energia suficiente para iluminar a Sala de Tecnologia e o Pátio da Escola Estadual José Mamede de Aquino!";
+
+                    // 3. Após 1.5s, transição para o mapa blueprint iluminado da escola
+                    setTimeout(() => {
+                        turbineContainer.style.display = 'none';
+                        schoolBlueprintMap.classList.add('active');
+                        displayCardHeaderTitle.textContent = 'REDE DA ESCOLA ALIMENTADA';
+                        displayCardBadge.textContent = '100% ONLINE';
+                    }, 1500);
+
+                    // 4. Após 3 segundos, abre o Modal com o Loot das 3 Cartas Colecionáveis
+                    setTimeout(() => {
+                        openLootCardsModal();
+                    }, 3000);
+                }
+            });
+
+            function triggerFailureUI(msg) {
+                turbineContainer.classList.add('shake');
+                turbineBlades.className = 'turbine-blades';
+                ledIndicator.className = 'led-light red';
+                ledText.textContent = 'FALHA DE CÁLCULO';
+                ledText.style.color = 'var(--accent-red)';
+
+                feedbackBox.className = 'feedback-box error';
+                feedbackTitle.innerHTML = '⚠️ Atenção aos Cálculos:';
+                feedbackMessage.textContent = msg;
+            }
+
+            // --- REQUISITOS 2 & 3: LOOT CARDS & SAVE GAME FÍSICO MODAL ---
+            function openLootCardsModal() {
+                lootModalOverlay.classList.add('active');
+            }
+
+            function closeLootCardsModal() {
+                lootModalOverlay.classList.remove('active');
+            }
+
+            btnCloseLootX.addEventListener('click', closeLootCardsModal);
+
+            btnRestartGame.addEventListener('click', () => {
+                closeLootCardsModal();
+                btnReconfigure.click();
+            });
+
+            // --- GABARITO PROFESSOR SECRETO ---
+            let clickCount = 0;
+            let clickTimer = null;
+
+            mainTitle.addEventListener('click', () => {
+                clickCount++;
+
+                if (clickTimer) clearTimeout(clickTimer);
+
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                }, 1000);
+
+                if (clickCount >= 3) {
+                    clickCount = 0;
+                    clearTimeout(clickTimer);
+
+                    if (assemblyState.radius && assemblyState.material && assemblyState.location) {
+                        const R = assemblyState.radius.r;
+                        const Cp = assemblyState.material.cp;
+                        const v = assemblyState.location.v;
+
+                        const exactArea = 3.14 * Math.pow(R, 2);
+                        const exactPb = 0.5 * 1.22 * exactArea * Math.pow(v, 3);
+                        const exactPr = exactPb * Cp;
+
+                        inputArea.value = exactArea.toFixed(3).replace('.', ',');
+                        inputPb.value = exactPb.toFixed(2).replace('.', ',');
+                        inputPr.value = exactPr.toFixed(2).replace('.', ',');
+
+                        teacherToast.classList.add('active');
+                        setTimeout(() => {
+                            teacherToast.classList.remove('active');
+                        }, 3500);
+                    } else {
+                        alert("Monte a turbina na Tela 1 antes de ativar o Gabarito!");
+                    }
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.tooltip-trigger')) {
+                    document.querySelectorAll('.tooltip-trigger').forEach(t => t.classList.remove('active'));
+                }
+            });
+
+            document.querySelectorAll('.tooltip-trigger').forEach(trigger => {
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    trigger.classList.toggle('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
